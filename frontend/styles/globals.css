@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-cigar-bg text-cigar-text antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
+  }
+
+  /* Prevent pull-to-refresh on mobile */
+  body {
+    overscroll-behavior-y: contain;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #1a1410;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #3a3028;
+    border-radius: 2px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #4a4038;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-cigar-card rounded-2xl shadow-card transition-all duration-200;
+  }
+
+  .card-interactive {
+    @apply card hover:bg-cigar-card-hover hover:shadow-card-hover active:scale-[0.98] cursor-pointer;
+  }
+
+  .btn-primary {
+    @apply bg-cigar-accent text-cigar-bg font-semibold px-6 py-3 rounded-xl
+           hover:bg-cigar-accent-light active:scale-[0.97] transition-all duration-150
+           min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+
+  .btn-secondary {
+    @apply border border-cigar-border text-cigar-text px-6 py-3 rounded-xl
+           hover:bg-cigar-card active:scale-[0.97] transition-all duration-150
+           min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+
+  .input-field {
+    @apply w-full bg-cigar-bg border border-cigar-border rounded-xl px-4 py-3
+           text-cigar-text placeholder-cigar-text-secondary
+           focus:outline-none focus:border-cigar-accent focus:ring-1 focus:ring-cigar-accent
+           transition-colors duration-150 min-h-[44px];
+  }
+
+  .bottom-nav-item {
+    @apply flex flex-col items-center justify-center py-2 px-3 min-w-[64px]
+           text-cigar-text-secondary transition-colors duration-150;
+  }
+
+  .bottom-nav-item.active {
+    @apply text-cigar-accent;
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}

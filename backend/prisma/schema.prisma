@@ -1,0 +1,171 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  appleId       String?  @unique
+  googleId      String?  @unique
+  name          String?
+  isVerified    Boolean  @default(false)
+  ageVerified   Boolean  @default(false)
+  subscriptionStatus String @default("free") // free, premium, cancelled
+  subscriptionEndDate DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastLoginAt   DateTime?
+
+  // Relationships
+  journalEntries JournalEntry[]
+  wishlist      Wishlist[]
+  preferences   UserPreference?
+
+  @@map("users")
+}
+
+model UserPreference {
+  id                    String  @id @default(cuid())
+  userId                String  @unique
+  user                  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Notification preferences
+  enableNotifications   Boolean @default(true)
+  enablePairingAlerts   Boolean @default(true)
+  
+  // Privacy preferences
+  shareJournal          Boolean @default(false)
+  shareWishlist         Boolean @default(false)
+  
+  // ML preferences
+  enablePhotoProcessing Boolean @default(true)
+  enablePairingSuggestions Boolean @default(true)
+  
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("user_preferences")
+}
+
+model Cigar {
+  id            String   @id @default(cuid())
+  name          String
+  brand         String
+  origin        String?
+  vitola        String?  // Ring gauge and length
+  wrapper       String?
+  binder        String?
+  filler        String?
+  strength      String?  // Mild, Medium, Full
+  flavorProfile String[] // Array of flavor notes
+  msrp          Float?   // Manufacturer's suggested retail price
+  description   String?
+  imageUrl      String?
+  
+  // Search optimization
+  searchVector  String?  // For full-text search
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relationships
+  journalEntries JournalEntry[]
+  pairings      Pairing[]
+  wishlist      Wishlist[]
+
+  @@map("cigars")
+  @@index([brand, name])
+  @@index([origin])
+  @@index([strength])
+}
+
+model JournalEntry {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cigarId       String
+  cigar         Cigar    @relation(fields: [cigarId], references: [id])
+  
+  // Session details
+  smokedAt      DateTime
+  location      String?
+  companions    String[] // Array of companion names
+  duration      Int?     // Duration in minutes
+  rating        Int      // 1-5 star rating
+  notes         String?
+  
+  // Environment details
+  weather       String?
+  occasion      String?
+  beverage      String?
+  
+  // Image
+  imageUrl      String?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("journal_entries")
+  @@index([userId, smokedAt])
+  @@index([cigarId])
+}
+
+model Pairing {
+  id            String   @id @default(cuid())
+  cigarId       String
+  cigar         Cigar    @relation(fields: [cigarId], references: [id])
+  
+  // Pairing details
+  category      String   // beverage, food, etc.
+  name          String   // e.g., "Macallan 18", "Dark Chocolate"
+  description   String?
+  confidence    Float    @default(0.8) // AI confidence score
+  
+  // Source tracking
+  source        String   @default("ai") // ai, expert, user
+  isVerified    Boolean  @default(false)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("pairings")
+  @@index([cigarId, category])
+}
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cigarId   String
+  cigar     Cigar    @relation(fields: [cigarId], references: [id])
+  notes     String?
+  priority  Int      @default(1) // 1-5 priority level
+  createdAt DateTime @default(now())
+
+  @@unique([userId, cigarId])
+  @@map("wishlist")
+  @@index([userId, priority])
+}
+
+model AffiliateLink {
+  id          String   @id @default(cuid())
+  cigarId     String?
+  retailer    String   // JR Cigars, Famous Smoke, etc.
+  url         String
+  price       Float?
+  inStock     Boolean  @default(true)
+  lastChecked DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("affiliate_links")
+  @@index([cigarId, retailer])
+}

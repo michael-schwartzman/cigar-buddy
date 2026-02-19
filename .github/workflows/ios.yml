@@ -1,0 +1,73 @@
+name: iOS CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths: [ 'ios/**' ]
+  pull_request:
+    branches: [ main, develop ]
+    paths: [ 'ios/**' ]
+
+jobs:
+  build-and-test:
+    runs-on: macos-14
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+    
+    - name: Cache Xcode DerivedData
+      uses: actions/cache@v4
+      with:
+        path: ~/Library/Developer/Xcode/DerivedData
+        key: ${{ runner.os }}-xcode-deriveddata-${{ hashFiles('ios/**') }}
+        restore-keys: |
+          ${{ runner.os }}-xcode-deriveddata-
+    
+    - name: Build iOS App
+      working-directory: ./ios
+      run: |
+        xcodebuild clean build \
+          -scheme CigarBuddy \
+          -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+          CODE_SIGNING_ALLOWED=NO
+    
+    - name: Run iOS Tests
+      working-directory: ./ios
+      run: |
+        xcodebuild test \
+          -scheme CigarBuddy \
+          -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+          CODE_SIGNING_ALLOWED=NO
+
+  compliance-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Check for compliance violations
+      run: |
+        echo "🔍 Checking for App Store compliance violations..."
+        
+        # Check for prohibited terms
+        if grep -r -i "buy\|purchase\|shop\|cart" ios/ --include="*.swift" --exclude-dir=Tests; then
+          echo "❌ Found potential compliance violations: in-app purchase terms"
+          exit 1
+        fi
+        
+        # Check for age verification
+        if ! grep -r "age.*verification\|21.*year" ios/ --include="*.swift"; then
+          echo "⚠️  Warning: Age verification not found in code"
+        fi
+        
+        # Check for external link handling
+        if ! grep -r "UIApplication.*open" ios/ --include="*.swift"; then
+          echo "⚠️  Warning: External link handling not found"
+        fi
+        
+        echo "✅ Basic compliance checks passed"
